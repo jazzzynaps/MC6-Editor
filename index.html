@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MC-6 BLE Editör</title>
+<style>
+:root{--bg:#14161a;--panel:#1c1f24;--panel-2:#23262c;--line:#2f333a;--text:#e8e6e1;--text-dim:#8b8f96;--accent:#3ddad0;--accent-dim:#24625d;--amber:#e0a248;--amber-dim:#5c4a24;--danger:#d9634f;--display:'Avenir Next','Segoe UI Semibold',system-ui,sans-serif;--mono:'SF Mono','Consolas','Menlo',monospace}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--display);-webkit-font-smoothing:antialiased;min-height:100%}body{overflow-x:hidden}button,input,select{font:inherit}.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;position:relative;z-index:5}.brand{font-weight:700;font-size:15px;display:flex;align-items:baseline;gap:8px;white-space:nowrap}.brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 8px var(--accent)}.brand small{font-family:var(--mono);font-size:10px;color:var(--text-dim)}.spacer{flex:1;min-width:10px}
+.btn{font-family:var(--display);font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;white-space:nowrap;touch-action:manipulation}.btn:hover{border-color:var(--accent);color:var(--accent)}.btn.primary{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}.btn.ghost-amber{color:var(--amber);border-color:var(--amber-dim)}.btn.danger{color:var(--danger);border-color:#69382f}.btn:disabled{opacity:.4;cursor:not-allowed}
+.status-pill{font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:6px 9px;border-radius:20px;border:1px solid var(--line);display:flex;align-items:center;gap:6px;white-space:nowrap}.status-pill .led{width:6px;height:6px;border-radius:50%;background:#555}.status-pill.on{color:var(--accent);border-color:var(--accent-dim)}.status-pill.on .led{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.activity{font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:5px 8px;border:1px solid var(--line);border-radius:5px;min-width:125px;text-align:center}.activity.active{color:var(--accent);border-color:var(--accent-dim)}
+.main{display:flex;flex:1;min-height:0}.sidebar{width:220px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}.sidebar-head{padding:14px 16px 8px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase}.bank-list{flex:1;overflow-y:auto;padding:4px 8px}.bank-item{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text-dim);border:1px solid transparent;margin-bottom:2px}.bank-item:hover{background:var(--panel-2)}.bank-item.active{background:var(--panel-2);color:var(--text);border-color:var(--line)}.bank-item .num{font-family:var(--mono);font-size:10.5px;color:var(--accent);width:20px;flex-shrink:0}.bank-item input{background:transparent;border:none;color:inherit;font:inherit;width:100%;outline:none;min-width:0}.bank-item .icon-btn{opacity:0;font-size:12px;cursor:pointer;padding:2px 3px;flex-shrink:0}.bank-item:hover .icon-btn{opacity:.7}.sidebar-foot{padding:10px;border-top:1px solid var(--line)}.add-bank{width:100%;padding:9px;border-radius:6px;border:1px dashed var(--line);background:transparent;color:var(--text-dim);font-size:12.5px;cursor:pointer}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;padding:30px 20px;overflow-y:auto;min-width:0}.pedal{background:linear-gradient(180deg,#24262b,#1a1c20);border:1px solid var(--line);border-radius:24px;padding:38px 32px 44px;width:100%;max-width:680px;box-shadow:0 20px 50px rgba(0,0,0,.4)}.screen-row{display:grid;grid-template-columns:100px 1fr 100px;gap:18px;align-items:center;margin-bottom:30px}.lcd{background:#0d1210;border:1px solid #2a3530;border-radius:12px;padding:18px 12px;text-align:center;min-width:0}.lcd .bank-name{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lcd .preview-label{font-size:21px;font-weight:700;margin-top:6px;min-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lcd .preview-sub{font-family:var(--mono);font-size:11px;color:#5c8f89;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 32% 28%,#3a3d43,#1c1e22 70%);border:1px solid #3a3e45;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:.12s;touch-action:manipulation}.fs.selected{outline:3px solid var(--accent);outline-offset:3px}.fs.remote-active{box-shadow:0 0 22px var(--sw-color,#3ddad0);transform:scale(1.07)}.fs.remote-active .ring{opacity:1;filter:brightness(1.8)}.fs .ring{position:absolute;inset:9px;border-radius:50%;border:3.5px solid var(--sw-color,#444);opacity:.85;transition:.12s}.fs .label{font-size:14px;font-weight:700;text-align:center;padding:0 6px;z-index:1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fs .badge{position:absolute;top:4px;right:10px;font-family:var(--mono);font-size:10px;color:var(--text-dim)}.side-switches{display:flex;flex-direction:column;gap:16px}.front-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.editor{width:340px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);padding:20px;overflow-y:auto;min-width:0}.editor h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin:0 0 16px}.field{margin-bottom:16px}.field label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:6px}.field input,.field select{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:9px 10px;border-radius:6px;font-size:13px;outline:none}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.swatches{display:flex;gap:8px;flex-wrap:wrap}.swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent}.swatch.active{border-color:var(--text)}.empty-hint{color:var(--text-dim);font-size:12.5px;line-height:1.6;margin-top:40px;text-align:center}.divider{height:1px;background:var(--line);margin:18px 0}.tabs{display:flex;gap:6px;margin-bottom:14px}.tab{flex:1;text-align:center;padding:8px 0;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer}.tab.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}.mode-toggle{display:flex;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.mode-toggle div{flex:1;text-align:center;padding:8px 0;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-dim);background:var(--panel-2)}.mode-toggle div.active{color:var(--amber);background:var(--amber-dim)}.action-card{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;position:relative}.action-card .rm{position:absolute;top:8px;right:10px;color:var(--danger);cursor:pointer}.action-card .idx{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:8px}.add-action{width:100%;padding:9px;border-radius:6px;border:1px dashed var(--line);background:transparent;color:var(--text-dim);font-size:12.5px;cursor:pointer}.footer-note{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;padding:12px;border-top:1px solid var(--line)}
+@media (hover:none) and (pointer:coarse){.bank-item .icon-btn{display:none}}
+@media(max-width:900px){.topbar{padding:10px;gap:7px}.brand{width:100%;font-size:14px}.brand small{display:none}.spacer{display:none}.status-pill{order:2}.activity{order:3;flex:1;min-width:0}.topbar .btn{order:4;flex:1 1 calc(50% - 7px);min-width:130px;padding:10px 8px}.main{flex-direction:column}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line);display:block}.sidebar-head{padding:10px 12px 5px}.bank-list{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:5px 8px 8px;-webkit-overflow-scrolling:touch}.bank-item{flex:0 0 auto;min-width:145px;margin:0}.sidebar-foot{display:none}.stage{width:100%;padding:18px 10px;overflow:visible}.pedal{max-width:560px;padding:25px 18px 30px;border-radius:18px}.screen-row{grid-template-columns:65px 1fr 65px;gap:10px;margin-bottom:22px}.side-switches{gap:10px}.front-row{gap:10px}.fs .ring{inset:6px;border-width:3px}.fs .label{font-size:11px}.fs .badge{top:2px;right:6px;font-size:8px}.lcd{padding:13px 7px}.lcd .bank-name{font-size:9px}.lcd .preview-label{font-size:16px;min-height:20px}.lcd .preview-sub{font-size:8px}.editor{width:100%;border-left:none;border-top:1px solid var(--line);padding:18px 14px 30px;overflow:visible}.editor h3{font-size:12px}.row3{grid-template-columns:1fr 1fr 1fr}.footer-note{font-size:8px}}
+@media(max-width:420px){.topbar .btn{min-width:0;font-size:11px}.screen-row{grid-template-columns:58px 1fr 58px;gap:8px}.pedal{padding:22px 12px 26px}.front-row{gap:8px}.fs .label{font-size:10px}.fs .ring{inset:5px;border-width:2.5px}.row3{gap:5px}}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14161a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon-192.png">
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+<div class="brand"><span class="dot"></span>MC-6 BLE EDİTÖR<small>DIY MIDI FOOT CONTROLLER</small></div>
+<div class="spacer"></div>
+<div class="status-pill" id="midiStatus"><span class="led"></span><span id="midiStatusText">Bağlı değil</span></div>
+<div class="activity" id="bleActivity">BLE MIDI: bekleniyor</div>
+<button class="btn" id="connectBleBtn">BLE Bağlan</button>
+<button class="btn danger" id="disconnectBleBtn" disabled>BLE Bağlantısını Kes</button>
+<button class="btn" id="importBtn">İçe aktar</button>
+<button class="btn" id="exportBtn">Dışa aktar</button>
+<button class="btn ghost-amber" id="pullBtn" disabled>Cihazdan oku</button>
+<button class="btn primary" id="autoSendBtn">Auto Send: AÇIK</button>
+<button class="btn primary" id="sendBtn" disabled>Bu bankayı gönder</button>
+<button class="btn primary" id="sendAllBtn" disabled>Tüm bankaları gönder</button>
+<input type="file" id="fileInput" accept=".json" style="display:none">
+</div>
+
+<div class="main">
+<div class="sidebar">
+<div class="sidebar-head">Bankalar</div>
+<div class="bank-list" id="bankList"></div>
+<div class="sidebar-foot"><button class="add-bank" id="addBank">+ Yeni banka</button></div>
+</div>
+
+<div class="stage">
+<div class="pedal">
+<div class="screen-row">
+<div class="side-switches" id="sideSwitches"></div>
+<div class="lcd">
+<div class="bank-name" id="lcdBank">BANK 1</div>
+<div class="preview-label" id="lcdLabel">—</div>
+<div class="preview-sub" id="lcdSub">seç ve düzenle</div>
+</div>
+<div class="side-switches" id="sideSwitches2"></div>
+</div>
+<div class="front-row" id="frontRow"></div>
+</div>
+</div>
+
+<div class="editor" id="editorPanel"><div class="empty-hint">Düzenlemek için bir footswitch seç</div></div>
+</div>
+
+<div class="footer-note">SysEx protokolü ESP32 firmware'i ile eşleşecek şekilde tasarlandı · BLE MIDI editörü</div>
+</div>
+
+<script>
+const COLORS=['#3ddad0','#e0a248','#d9634f','#7c9ff2','#8fd15a','#c48ce0','#777c85'];
+const MSG_TYPES=[{v:'pc',label:'Program Change'},{v:'cc',label:'Control Change'},{v:'note',label:'Note On/Off'}];
+const BLE_MIDI_SERVICE_UUID='03b80e5a-ede8-4b33-a751-6ce34ec4c700';
+const BLE_MIDI_CHARACTERISTIC_UUID='7772e5db-3868-4112-a1a9-f2669d106bf3';
+const TYPE_MAP={pc:0,cc:1,note:2};
+const TYPE_MAP_REV={0:'pc',1:'cc',2:'note'};
+
+function blankAction(n){return{type:'pc',channel:1,number:n,value:127,offValue:0}}
+function blankSwitch(i){return{label:'SW '+(i+1),color:COLORS[i%COLORS.length],mode:'momentary',shortPress:[blankAction(i+1)],longPress:[]}}
+function blankBank(n){return{name:'Banka '+n,switches:Array.from({length:6},(_,i)=>blankSwitch(i))}}
+
+let state={banks:[blankBank(1)],activeBank:0,activeSwitch:null,activeTab:'short'};
+let bleDevice=null,midiCharacteristic=null,isBLE=false;
+let bleWriteQueue=Promise.resolve();
+let autoSendEnabled=true;
+let autoSendTimer=null;
+let autoSendBusy=false;
+let autoSendPending=false;
+
+function splitSysExMessages(bytes){
+  const out=[];let cur=null;
+  for(const raw of bytes){
+    const b=raw&0xFF;
+    if(b===0xF0){cur=[0xF0];continue}
+    if(!cur)continue;
+    cur.push(b);
+    if(b===0xF7){out.push(new Uint8Array(cur));cur=null}
+  }
+  return out;
+}
+function queueBleMessage(bytes){
+  bleWriteQueue=bleWriteQueue.catch(()=>{}).then(async()=>{
+    if(!isBLE||!midiCharacteristic)throw new Error('BLE bağlantısı yok');
+    const packet=new Uint8Array([0x80,0x80,...bytes]);
+    console.log('BLE TX:',bytesToHex(packet));
+    if(midiCharacteristic.properties&&midiCharacteristic.properties.writeWithoutResponse){
+      await midiCharacteristic.writeValueWithoutResponse(packet);
+    }else{
+      await midiCharacteristic.writeValue(packet);
+    }
+    await new Promise(r=>setTimeout(r,90));
+  });
+  return bleWriteQueue;
+}
+
+
+const bankListEl=document.getElementById('bankList');
+const frontRowEl=document.getElementById('frontRow');
+const editorEl=document.getElementById('editorPanel');
+const statusPill=document.getElementById('midiStatus');
+const statusText=document.getElementById('midiStatusText');
+const sendBtn=document.getElementById('sendBtn');
+const sendAllBtn=document.getElementById('sendAllBtn');
+const pullBtn=document.getElementById('pullBtn');
+const connectBleBtn=document.getElementById('connectBleBtn');
+const disconnectBleBtn=document.getElementById('disconnectBleBtn');
+const bleActivity=document.getElementById('bleActivity');
+
+let pulling=false;
+let pullBankTimer=null,pullNextTimer=null,pullCountTimer=null,pullQuietTimer=null;
+let pullExpectedBanks=0,pullCurrentBank=0;
+let pullTransferDone=false;
+let pullReceivedBanks=new Set(),pullReceivedConfigs=new Set(),pullBankNames=new Set();
+let bleSysExBuffer=[];
+
+function currentBank(){return state.banks[state.activeBank]}
+function resetPullTimers(){
+  clearTimeout(pullBankTimer);clearTimeout(pullNextTimer);clearTimeout(pullCountTimer);clearTimeout(pullQuietTimer);
+  pullBankTimer=pullNextTimer=pullCountTimer=pullQuietTimer=null;
+}
+function deviceName(){return bleDevice?bleDevice.name:'MC-6'}
+function escapeHtml(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+function escapeHtmlAttr(v){return escapeHtml(v)}
+function bytesToHex(bytes){return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(' ')}
+
+function canAutoSend(){return autoSendEnabled && isBLE && !!midiCharacteristic && !pulling}
+async function runAutoSend(){
+  if(!canAutoSend())return;
+  if(autoSendBusy){autoSendPending=true;return}
+  autoSendBusy=true;
+  try{
+    await sendSysExPacket(buildBankSysEx(currentBank(),state.activeBank));
+    statusText.textContent=deviceName()+' · otomatik gönderildi ✓';
+  }catch(err){console.error('Auto Send hatası:',err);statusText.textContent='Auto Send hatası'}
+  finally{
+    autoSendBusy=false;
+    if(autoSendPending){autoSendPending=false;scheduleAutoSend(120)}
+  }
+}
+function scheduleAutoSend(delay=350){
+  clearTimeout(autoSendTimer);
+  if(!canAutoSend())return;
+  autoSendTimer=setTimeout(runAutoSend,delay);
+}
+function changedAndRender(renderFn=renderAll,delay=350){renderFn();scheduleAutoSend(delay)}
+
+function renderBanks(){
+  bankListEl.innerHTML='';
+  state.banks.forEach((b,i)=>{
+    const el=document.createElement('div');
+    el.className='bank-item'+(i===state.activeBank?' active':'');
+    el.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><input type="text" maxlength="16" value="${escapeHtmlAttr(b.name)}" data-i="${i}"><span class="icon-btn dup" data-i="${i}">⧉</span><span class="icon-btn del" data-i="${i}">✕</span>`;
+    el.querySelector('input').addEventListener('click',e=>e.stopPropagation());
+    el.querySelector('input').addEventListener('input',e=>{b.name=(e.target.value||('Banka '+(i+1))).slice(0,16);renderStage();scheduleAutoSend(450)});
+    el.querySelector('.dup').addEventListener('click',e=>{
+      e.stopPropagation();const clone=JSON.parse(JSON.stringify(b));clone.name=b.name+' (kopya)';
+      state.banks.splice(i+1,0,clone);state.activeBank=i+1;state.activeSwitch=null;renderAll();
+    });
+    el.querySelector('.del').addEventListener('click',e=>{
+      e.stopPropagation();if(state.banks.length===1)return;state.banks.splice(i,1);
+      if(state.activeBank>=state.banks.length)state.activeBank=state.banks.length-1;
+      state.activeSwitch=null;renderAll();
+    });
+    el.addEventListener('click',()=>{state.activeBank=i;state.activeSwitch=0;renderAll()});
+    bankListEl.appendChild(el);
+  });
+}
+
+function fsNode(sw,idx){
+  const div=document.createElement('div');
+  div.className='fs'+(state.activeSwitch===idx?' selected':'');
+  div.style.setProperty('--sw-color',sw.color);
+  const total=sw.shortPress.length+sw.longPress.length;
+  div.innerHTML=`<div class="ring"></div>${total>1?`<div class="badge">×${total}</div>`:''}<div class="label">${escapeHtml(sw.label)}</div>`;
+  div.addEventListener('click',()=>{state.activeSwitch=idx;state.activeTab='short';renderAll();requestAnimationFrame(()=>highlightRemoteSwitch(idx,300))});
+  return div;
+}
+
+function renderStage(){
+  const b=currentBank();if(!b)return;
+  document.getElementById('lcdBank').textContent=b.name.toUpperCase();
+  document.getElementById('sideSwitches').innerHTML='';
+  document.getElementById('sideSwitches2').innerHTML='';
+  frontRowEl.innerHTML='';
+  document.getElementById('sideSwitches').appendChild(fsNode(b.switches[4],4));
+  document.getElementById('sideSwitches2').appendChild(fsNode(b.switches[5],5));
+  for(let i=0;i<4;i++)frontRowEl.appendChild(fsNode(b.switches[i],i));
+  if(state.activeSwitch!==null&&b.switches[state.activeSwitch]){
+    const sw=b.switches[state.activeSwitch],first=sw.shortPress[0];
+    document.getElementById('lcdLabel').textContent=sw.label;
+    document.getElementById('lcdSub').textContent=first?(first.type.toUpperCase()+' · CH'+first.channel+' · #'+first.number):'mesaj yok';
+  }else{
+    document.getElementById('lcdLabel').textContent='—';
+    document.getElementById('lcdSub').textContent='seç ve düzenle';
+  }
+}
+
+function actionCard(action,listRef,idx,sw,onChange){
+  const div=document.createElement('div');div.className='action-card';
+  const showOnOff=sw.mode==='toggle'&&action.type!=='pc';
+  div.innerHTML=`<div class="idx">MESAJ ${idx+1}</div><span class="rm">✕</span>
+  <div class="field"><select class="a-type">${MSG_TYPES.map(t=>`<option value="${t.v}" ${t.v===action.type?'selected':''}>${t.label}</option>`).join('')}</select></div>
+  <div class="row3"><div class="field"><label>Kanal</label><input type="number" class="a-ch" min="1" max="16" value="${action.channel}"></div>
+  <div class="field"><label>Numara</label><input type="number" class="a-num" min="0" max="127" value="${action.number}"></div>
+  <div class="field"><label>Değer</label><input type="number" class="a-val" min="0" max="127" value="${action.value}"></div></div>
+  ${showOnOff?`<div class="field"><label>Kapalı değeri</label><input type="number" class="a-offval" min="0" max="127" value="${action.offValue}"></div>`:''}`;
+  div.querySelector('.rm').addEventListener('click',()=>{listRef.splice(idx,1);onChange()});
+  div.querySelector('.a-type').addEventListener('change',e=>{action.type=e.target.value;onChange()});
+  div.querySelector('.a-ch').addEventListener('change',e=>{action.channel=Math.max(1,Math.min(16,parseInt(e.target.value)||1));onChange(false)});
+  div.querySelector('.a-num').addEventListener('change',e=>{action.number=Math.max(0,Math.min(127,parseInt(e.target.value)||0));onChange(false)});
+  div.querySelector('.a-val').addEventListener('change',e=>{action.value=Math.max(0,Math.min(127,parseInt(e.target.value)||0));onChange(false)});
+  const off=div.querySelector('.a-offval');if(off)off.addEventListener('change',e=>{action.offValue=Math.max(0,Math.min(127,parseInt(e.target.value)||0));onChange(false)});
+  return div;
+}
+
+function renderEditor(){
+  if(state.activeSwitch===null){editorEl.innerHTML='<div class="empty-hint">Düzenlemek için bir footswitch seç</div>';return}
+  const bank=currentBank();
+  if(!bank||!bank.switches||!bank.switches[state.activeSwitch]){state.activeSwitch=null;editorEl.innerHTML='<div class="empty-hint">Düzenlemek için bir footswitch seç</div>';return}
+  const sw=bank.switches[state.activeSwitch];
+  editorEl.innerHTML=`<h3>Switch ${state.activeSwitch+1} ayarları</h3>
+  <div class="field"><label>Etiket</label><input type="text" id="f-label" maxlength="12" value="${escapeHtmlAttr(sw.label)}"></div>
+  <div class="field"><label>Renk</label><div class="swatches" id="f-colors"></div></div>
+  <div class="field"><label>Davranış</label><div class="mode-toggle"><div id="mode-momentary" class="${sw.mode==='momentary'?'active':''}">Momentary</div><div id="mode-toggle" class="${sw.mode==='toggle'?'active':''}">Toggle</div></div></div>
+  <div class="divider"></div>
+  <div class="tabs"><div class="tab ${state.activeTab==='short'?'active':''}" id="tab-short">Kısa basış</div><div class="tab ${state.activeTab==='long'?'active':''}" id="tab-long">Uzun basış</div></div>
+  <div id="actionList"></div><button class="add-action" id="addAction">+ Mesaj ekle</button>`;
+  const colorsEl=document.getElementById('f-colors');
+  COLORS.forEach(c=>{const s=document.createElement('div');s.className='swatch'+(sw.color===c?' active':'');s.style.background=c;s.addEventListener('click',()=>{sw.color=c;renderAll()});colorsEl.appendChild(s)});
+  document.getElementById('f-label').addEventListener('input',e=>{sw.label=(e.target.value||'SW').slice(0,12);renderStage();scheduleAutoSend(450)});
+  document.getElementById('tab-short').addEventListener('click',()=>{state.activeTab='short';renderEditor()});
+  document.getElementById('tab-long').addEventListener('click',()=>{state.activeTab='long';renderEditor()});
+  document.getElementById('mode-momentary').addEventListener('click',()=>{sw.mode='momentary';renderAll();scheduleAutoSend()});
+  document.getElementById('mode-toggle').addEventListener('click',()=>{sw.mode='toggle';renderAll();scheduleAutoSend()});
+  const list=state.activeTab==='short'?sw.shortPress:sw.longPress;
+  const listEl=document.getElementById('actionList');
+  if(list.length===0){const p=document.createElement('div');p.className='empty-hint';p.style.margin='10px 0 16px';p.textContent=state.activeTab==='short'?'Kısa basışta hiç mesaj yok.':'Uzun basış tanımlı değil.';listEl.appendChild(p)}
+  else list.forEach((action,i)=>listEl.appendChild(actionCard(action,list,i,sw,(rerenderStage=true)=>{renderEditor();if(rerenderStage)renderStage();scheduleAutoSend()})));
+  document.getElementById('addAction').addEventListener('click',()=>{list.push(blankAction(list.length+1));renderEditor();renderStage();scheduleAutoSend()});
+}
+
+function renderAll(){try{renderBanks()}catch(e){console.error(e)}try{renderStage()}catch(e){console.error(e)}try{renderEditor()}catch(e){console.error(e)}}
+
+document.getElementById('addBank').addEventListener('click',()=>{state.banks.push(blankBank(state.banks.length+1));state.activeBank=state.banks.length-1;state.activeSwitch=null;renderAll()});
+document.getElementById('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state.banks,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='mc6-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=evt=>{try{const parsed=JSON.parse(evt.target.result);if(Array.isArray(parsed)&&parsed.length){state.banks=parsed;state.activeBank=0;state.activeSwitch=null;renderAll()}}catch(err){alert('Dosya okunamadı: geçersiz JSON')}};reader.readAsText(file)});
+
+connectBleBtn.addEventListener('click',async()=>{
+  if(!navigator.bluetooth){statusText.textContent='Bu tarayıcı Web Bluetooth desteklemiyor';return}
+  try{
+    if(bleDevice&&bleDevice.gatt&&bleDevice.gatt.connected){statusText.textContent=(bleDevice.name||'MC-6')+' (BLE) zaten bağlı';return}
+    statusText.textContent='Bluetooth cihazı aranıyor…';
+    bleActivity.textContent='BLE MIDI: cihaz aranıyor';
+    bleDevice=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'MC-'}],optionalServices:[BLE_MIDI_SERVICE_UUID]});
+    bleDevice.addEventListener('gattserverdisconnected',onBleDisconnected);
+    const server=await bleDevice.gatt.connect();
+    const service=await server.getPrimaryService(BLE_MIDI_SERVICE_UUID);
+    midiCharacteristic=await service.getCharacteristic(BLE_MIDI_CHARACTERISTIC_UUID);
+    midiCharacteristic.addEventListener('characteristicvaluechanged',onBleMidiMessage);
+    await midiCharacteristic.startNotifications();
+    bleSysExBuffer=[];bleWriteQueue=Promise.resolve();isBLE=true;
+    statusPill.classList.add('on');
+    statusText.textContent=(bleDevice.name||'MC-6')+' (BLE)';
+    bleActivity.textContent='BLE MIDI: hazır';
+    sendBtn.disabled=false;sendAllBtn.disabled=false;pullBtn.disabled=false;
+    disconnectBleBtn.disabled=false;connectBleBtn.disabled=true;
+    // ÖNEMLİ: Bağlanınca otomatik okuma veya otomatik gönderme YOK.
+    // Böylece bilgisayarda hazırlanmış pedal ayarlarının üstüne yazılmaz.
+  }catch(err){console.error(err);statusText.textContent='BLE bağlantı hatası';bleActivity.textContent='BLE MIDI: hata'}
+});
+
+async function disconnectBLE(){
+  pulling=false;resetPullTimers();clearTimeout(autoSendTimer);bleSysExBuffer=[];bleWriteQueue=Promise.resolve();
+  try{
+    if(midiCharacteristic){try{await midiCharacteristic.stopNotifications()}catch(e){}midiCharacteristic=null}
+    if(bleDevice&&bleDevice.gatt&&bleDevice.gatt.connected)bleDevice.gatt.disconnect();
+  }catch(err){console.error(err)}
+  isBLE=false;statusPill.classList.remove('on');statusText.textContent='BLE bağlantısı kesildi';
+  bleActivity.textContent='BLE MIDI: bağlantı yok';
+  sendBtn.disabled=true;sendAllBtn.disabled=true;pullBtn.disabled=true;
+  disconnectBleBtn.disabled=true;connectBleBtn.disabled=false;
+}
+disconnectBleBtn.addEventListener('click',disconnectBLE);
+function onBleDisconnected(){
+  pulling=false;resetPullTimers();clearTimeout(autoSendTimer);bleSysExBuffer=[];bleWriteQueue=Promise.resolve();
+  isBLE=false;midiCharacteristic=null;statusPill.classList.remove('on');
+  statusText.textContent='BLE bağlantısı koptu';bleActivity.textContent='BLE MIDI: bağlantı yok';
+  sendBtn.disabled=true;sendAllBtn.disabled=true;pullBtn.disabled=true;
+  disconnectBleBtn.disabled=true;connectBleBtn.disabled=false;
+}
+
+document.getElementById('autoSendBtn').addEventListener('click',()=>{
+  autoSendEnabled=!autoSendEnabled;
+  const b=document.getElementById('autoSendBtn');
+  b.textContent='Auto Send: '+(autoSendEnabled?'AÇIK':'KAPALI');
+  b.classList.toggle('primary',autoSendEnabled);
+  if(autoSendEnabled)scheduleAutoSend(100);else clearTimeout(autoSendTimer);
+});
+
+
+function buildActionBytes(bankIndex,switchIndex,slot,actionIndex,mode,action,label){return[0xF0,0x7D,0x01,bankIndex,switchIndex,slot,actionIndex,mode==='toggle'?1:0,TYPE_MAP[action.type],action.channel,action.number,action.value,action.offValue,...label.slice(0,12).split('').map(ch=>ch.charCodeAt(0)&0x7F),0xF7]}
+function buildBankNameBytes(bankIndex,name){return[0xF0,0x7D,0x04,bankIndex,...name.slice(0,16).split('').map(ch=>ch.charCodeAt(0)&0x7F),0xF7]}
+function buildBankSysEx(bank,bankIndex){const bytes=[...buildBankNameBytes(bankIndex,bank.name)];bank.switches.forEach((sw,i)=>{[['shortPress',0],['longPress',1]].forEach(([key,slot])=>{sw[key].forEach((action,ai)=>bytes.push(...buildActionBytes(bankIndex,i,slot,ai,sw.mode,action,sw.label)))})});return new Uint8Array(bytes)}
+async function sendSysExPacket(bytes){if(!isBLE||!midiCharacteristic)throw new Error('BLE bağlantısı yok');const msgs=splitSysExMessages(bytes);if(!msgs.length)throw new Error('Geçerli SysEx yok');for(const msg of msgs)await queueBleMessage(msg)}
+
+sendBtn.addEventListener('click',async()=>{try{await sendSysExPacket(buildBankSysEx(currentBank(),state.activeBank));statusText.textContent=deviceName()+' · banka gönderildi ✓'}catch(err){console.error(err);statusText.textContent='Gönderim hatası'}});
+sendAllBtn.addEventListener('click',async()=>{try{for(let i=0;i<state.banks.length;i++){await sendSysExPacket(buildBankSysEx(state.banks[i],i));await new Promise(r=>setTimeout(r,100))}statusText.textContent=deviceName()+` · ${state.banks.length} banka gönderildi ✓`}catch(err){console.error(err);statusText.textContent='Gönderim hatası'}});
+
+async function requestPullBank(index){
+  if(!pulling)return false;
+  if(index<0||index>=pullExpectedBanks)return false;
+  pullCurrentBank=index;
+  statusText.textContent=`Banka ${index+1}/${pullExpectedBanks} okunuyor…`;
+  bleActivity.textContent=`BLE MIDI: banka ${index+1} isteniyor`;
+  try{
+    await sendSysExPacket(new Uint8Array([0xF0,0x7D,0x03,index,0xF7]));
+    return true;
+  }catch(err){
+    console.error('Banka okuma istegi gonderilemedi:',err);
+    return false;
+  }
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function runDeterministicPull(){
+  const count=pullExpectedBanks;
+  if(!pulling||count<1)return;
+
+  // Her bankayi mutlaka sirayla iste. Gelen paketlerin timer/state'i yonetmesine izin verme.
+  for(let i=0;i<count;i++){
+    if(!pulling)return;
+    await requestPullBank(i);
+    await sleep(1200);
+  }
+
+  // Adi gelmeyen bankalari bir kez daha iste.
+  const missing=[];
+  for(let i=0;i<count;i++) if(!pullBankNames.has(i)) missing.push(i);
+  for(const i of missing){
+    if(!pulling)return;
+    statusText.textContent=`Banka ${i+1}/${count} adı tekrar okunuyor…`;
+    await requestPullBank(i);
+    await sleep(1200);
+  }
+
+  await sleep(500);
+  if(!pulling)return;
+  finishPull(pullBankNames.size>=count);
+}
+
+pullBtn.addEventListener('click',async()=>{
+  if(!isBLE||!midiCharacteristic){statusText.textContent='Önce BLE Bağlan';return}
+
+  // Her basista sifirdan, tek bir okuma oturumu baslat.
+  resetPullTimers();
+  pulling=true;
+  pullTransferDone=false;
+  pullExpectedBanks=0;
+  pullCurrentBank=0;
+  pullReceivedBanks=new Set();
+  pullReceivedConfigs=new Set();
+  pullBankNames=new Set();
+  bleSysExBuffer=[];
+  state.banks=[blankBank(1)];
+  state.activeBank=0;
+  state.activeSwitch=0;
+  renderAll();
+
+  statusText.textContent=deviceName()+' · cihazdan okunuyor…';
+  bleActivity.textContent='BLE MIDI: cihaz verisi bekleniyor';
+
+  try{
+    // Yalnizca bir kez banka sayisini iste. Yeni firmware banka 0,1,...
+    // verilerini kendisi sirayla yollar ve 0x07 DONE ile bitirir.
+    await sendSysExPacket(new Uint8Array([0xF0,0x7D,0x05,0xF7]));
+
+    // BLE üzerinde de tek istek yeterli; firmware tüm bankaları sırayla gönderir.
+    clearTimeout(pullCountTimer);
+    pullCountTimer=null;
+  }catch(err){
+    console.error(err);
+    finishPull(false);
+  }
+});
+
+function extractSysExFromBLE(data){
+  const messages=[];
+  for(let i=0;i<data.length;i++){
+    const b=data[i]&0xFF;
+    if(bleSysExBuffer.length===0){
+      if(b===0xF0) bleSysExBuffer=[0xF0];
+      continue; // BLE timestamp/header byte'larini atla
+    }
+    if(b===0xF0){bleSysExBuffer=[0xF0];continue}
+    if(b===0xF7){
+      bleSysExBuffer.push(0xF7);
+      const msg=bleSysExBuffer.slice();
+      console.log('MC-6 SYSEX RX:',bytesToHex(msg));
+      messages.push(msg);bleSysExBuffer=[];continue;
+    }
+    if(b>=0x80) continue; // BLE MIDI timestamp/status arasi byte
+    bleSysExBuffer.push(b);
+  }
+  return messages;
+}
+
+function showBleActivity(text){
+  bleActivity.textContent='BLE MIDI: '+text;bleActivity.classList.add('active');
+  clearTimeout(window._bleActivityTimer);window._bleActivityTimer=setTimeout(()=>bleActivity.classList.remove('active'),700);
+}
+
+function onBleMidiMessage(event){
+  try{
+    const value=event.target.value,data=[];
+    for(let i=0;i<value.byteLength;i++)data.push(value.getUint8(i));
+    if(!data.length)return;
+    console.log('BLE MIDI RX RAW:',bytesToHex(data));showBleActivity(bytesToHex(data));
+    extractSysExFromBLE(data).forEach(processSysExData);
+  }catch(err){console.error('BLE RX HATASI:',err)}
+}
+
+function onMidiMessage(event){if(event.data)processSysExData(Array.from(event.data))}
+
+function armBankQuietTimer(bankIndex){
+  clearTimeout(pullQuietTimer);
+  pullQuietTimer=setTimeout(async()=>{
+    if(!pulling||bankIndex!==pullCurrentBank)return;
+
+    // Banka adi geldiyse bu banka okunmus sayilir.
+    if(!pullReceivedBanks.has(bankIndex))return;
+
+    const next=bankIndex+1;
+    if(next>=pullExpectedBanks){
+      // Tum beklenen banka adlari geldiyse okuma basarili.
+      if(pullReceivedBanks.size>=pullExpectedBanks) finishPull(true);
+      else finishPull(false);
+      return;
+    }
+
+    try{await requestPullBank(next)}catch(err){finishPull(false)}
+  },650);
+}
+
+function finishPull(ok=true){
+  const expected=pullExpectedBanks;
+  const received=pullReceivedBanks.size;
+  pulling=false;
+  resetPullTimers();
+
+  if(ok&&expected>0&&pullBankNames.size>=expected){
+    // Fazladan placeholder kaldiysa temizle.
+    if(state.banks.length>expected) state.banks=state.banks.slice(0,expected);
+    state.activeBank=0;
+    state.activeSwitch=0;
+    statusText.textContent=deviceName()+` · ${expected} banka okundu ✓`;
+    bleActivity.textContent=`USB MIDI: ${expected} banka okundu ✓`;
+  }else{
+    statusText.textContent=deviceName()+' · cihazdan banka okunamadı';
+    bleActivity.textContent=`BLE MIDI: aktarım bitti, banka adı eksik (${pullBankNames.size}/${expected||'?'})`;
+  }
+  renderAll();
+}
+
+function processSysExData(d){
+  try{
+    if(!d||d.length<3||d[0]!==0xF0||d[1]!==0x7D)return;
+    const type=d[2];
+    if(type===0x06&&d[d.length-1]===0xF7){
+      const bankIndex=d[3],switchIndex=d[4];
+      if(switchIndex===0x7F){
+        if(bankIndex>=0&&bankIndex<state.banks.length){state.activeBank=bankIndex;state.activeSwitch=0;renderAll()}
+        return;
+      }
+      if(switchIndex>=0&&switchIndex<6){
+        if(bankIndex>=0&&bankIndex<state.banks.length)state.activeBank=bankIndex;
+        state.activeSwitch=switchIndex;renderAll();requestAnimationFrame(()=>highlightRemoteSwitch(switchIndex,450));
+      }
+      return;
+    }
+
+    if(!pulling)return;
+
+    if(type===0x05){
+      if(d.length<5||d[d.length-1]!==0xF7)return;
+      const count=d[3];
+      if(count<1||count>16){finishPull(false);return}
+
+      // Ayni okuma oturumunda tekrarlanan count paketleri state'i sifirlamasin.
+      if(pullExpectedBanks!==0)return;
+
+      pullExpectedBanks=count;
+      clearTimeout(pullCountTimer);pullCountTimer=null;
+      state.banks=[];
+      for(let i=0;i<count;i++)state.banks.push(blankBank(i+1));
+      state.activeBank=0;state.activeSwitch=0;
+      pullReceivedBanks=new Set();pullReceivedConfigs=new Set();pullBankNames=new Set();
+      statusText.textContent=deviceName()+` · ${count} banka bulundu · okunuyor…`;
+      bleActivity.textContent=`BLE MIDI: ${count} banka bulundu`;
+      renderAll();
+
+      // Bankalar artik firmware tarafindan otomatik olarak sirayla gelir.
+      return;
+    }
+
+    // 0x07 = firmware tum banka aktarimini bitirdi.
+    if(type===0x07){
+      if(d.length<5||d[d.length-1]!==0xF7)return;
+      const count=d[3];
+      if(pullExpectedBanks===0) pullExpectedBanks=count;
+      pullTransferDone=true;
+      const namesOk=pullBankNames.size>=pullExpectedBanks;
+      finishPull(namesOk);
+      return;
+    }
+
+    if(type===0x04){
+      if(d.length<5||d[d.length-1]!==0xF7)return;
+      const bankIndex=d[3];
+      // Bank count cevabi parserdan kacmis olsa bile gelen banka adini kabul et.
+      if(bankIndex<0||bankIndex>=16)return;
+      while(state.banks.length<=bankIndex) state.banks.push(blankBank(state.banks.length+1));
+      if(pullExpectedBanks===0) pullExpectedBanks=Math.max(1,bankIndex+1);
+      let name=String.fromCharCode(...d.slice(4,d.length-1)).replace(/[\x00-\x1F\x7F]/g,'').trim();
+      if(!name) name=state.banks[bankIndex]?.name||`Banka ${bankIndex+1}`;
+      state.banks[bankIndex].name=name;
+      pullReceivedBanks.add(bankIndex);pullBankNames.add(bankIndex);
+      clearTimeout(pullBankTimer);
+      statusText.textContent=deviceName()+` · Banka ${bankIndex+1}/${pullExpectedBanks}: "${name}"`;
+      showBleActivity(`Banka ${bankIndex+1}: ${name}`);
+      renderBanks();renderStage();
+      return;
+    }
+
+    if(type===0x01){
+      if(d.length<14||d[d.length-1]!==0xF7)return;
+      const bankIndex=d[3],switchIndex=d[4],slot=d[5],actionIndex=d[6],modeByte=d[7],typeByte=d[8],channel=d[9],number=d[10],value=d[11],offValue=d[12];
+      if(bankIndex<0||bankIndex>=state.banks.length||switchIndex<0||switchIndex>=6)return;
+      const sw=state.banks[bankIndex].switches[switchIndex];if(!sw)return;
+      sw.mode=modeByte===1?'toggle':'momentary';
+      const label=String.fromCharCode(...d.slice(13,d.length-1)).trim();if(label)sw.label=label;
+      const action={type:TYPE_MAP_REV[typeByte]||'pc',channel,number,value,offValue};
+      const list=slot===0?sw.shortPress:sw.longPress;list[actionIndex]=action;
+      pullReceivedConfigs.add(`${bankIndex}:${switchIndex}:${slot}:${actionIndex}`);
+      renderStage();
+    }
+  }catch(err){console.error('MC-6 SYSEX PROCESSING HATASI:',err)}
+}
+
+function highlightRemoteSwitch(index,duration=450){
+  let node=null;
+  if(index===4)node=document.querySelector('#sideSwitches .fs');
+  else if(index===5)node=document.querySelector('#sideSwitches2 .fs');
+  else node=document.querySelectorAll('#frontRow .fs')[index];
+  if(!node)return;
+  node.classList.add('remote-active');clearTimeout(node._remoteTimer);
+  node._remoteTimer=setTimeout(()=>node.classList.remove('remote-active'),duration);
+}
+
+renderAll();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed', err));
+  });
+}
+</script>
+</body>
+</html>
